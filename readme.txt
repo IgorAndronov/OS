@@ -35,3 +35,32 @@ Extra reading:
 2. http://littleosbook.github.io/
 
 
+Explanations:
+
+1). when offsets are calculated like "stack_top" in
+mov esp, stack_top
+stack_top has offset relative to start of current section (text in this case)
+2). Then when linkage happens this offset is recalculated according to sections layout and initial oddset that defined in linker.ld
+in our case it is 1M.
+objdump -h ./isofiles/boot/kernel.bin
+Sections:
+Idx Name          Size      VMA               LMA               File off  Algn
+  0 .boot         00000018  0000000000100000  0000000000100000  00001000  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  1 .rodata       0000001a  0000000000100018  0000000000100018  00001018  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  2 .eh_frame     000000b8  0000000000100038  0000000000100038  00001038  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  3 .text         0000032c  00000000001000f0  00000000001000f0  000010f0  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  4 .data         0000001f  0000000000101000  0000000000101000  00002000  2**12
+                  CONTENTS, ALLOC, LOAD, DATA
+  5 .bss          0000a000  0000000000102000  0000000000102000  0000201f  2**12
+                  ALLOC
+  6 .comment      00000029  0000000000000000  0000000000000000  0000201f  2**0
+                  CONTENTS, READONLY
+
+So "stack_top" in resulting code will be replaced with 100000h + offset of the end of bss resulting to 10C000h
+
+As we have identity mapping of first 1GB and bootloader loads program in memory to the same addresses as defined in sections layout 
+all adresses that are calculated as offsets correspond to real phiscal addresses
