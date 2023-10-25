@@ -1,10 +1,15 @@
 global start
 extern long_mode_start
+global var_multiboot_info
+global p2_table_0   ;for test purpose
+global p2_table_1   ;for test purpose
+
 
 section .text
 bits 32
 start:
     mov esp, stack_top
+    mov dword [var_multiboot_info], ebx; Move Multiboot info pointer to global var
 
     call check_multiboot
     call check_cpuid
@@ -84,7 +89,7 @@ set_up_page_tables:
     ;important note: value of base address (bits 12-51) in page entry are multipled on 4096 (1000h) to get real phisical address.
     ;this multiply is done internaly by cpu. So these bits are not real address but in fact number of the phisical page.
     ; That is why all tables should be alligned in memory on 4096
-    ;So in below code we send to eax 2000h that is actually setup first 12 bits with 0 anf next 4 bits with 2 that reffer to second page(p3_table)
+    ;So in below code we send to eax 2000h that is actually setup first 12 bits with 0 and next 4 bits with 2 that reffer to second page(p3_table)
     
     ; map first P4 entry to P3 table
     mov eax, p3_table
@@ -96,25 +101,29 @@ set_up_page_tables:
     or eax, 0b11 ; present + writable
     mov [p3_table], eax
     mov ebx, p2_table_0
-    call map_p2_table
+    mov eax,0 ;additional param for map_p2_table
+    call map_p2_table ;first 1Gb will be identically mapped
 
     mov eax, p2_table_1
     or eax, 0b11 ; present + writable
     mov [p3_table +8], eax
     mov ebx, p2_table_1
-    call map_p2_table
+    mov eax,1 ;additional param for map_p2_table
+    call map_p2_table ;2Gb will be identically mapped
 
     mov eax, p2_table_2
     or eax, 0b11 ; present + writable
     mov [p3_table + 16], eax
     mov ebx, p2_table_2
-    call map_p2_table
+    mov eax,2 ;additional param for map_p2_table
+    call map_p2_table ;3Gb will be identically mapped
 
     mov eax, p2_table_3
     or eax, 0b11 ; present + writable
     mov [p3_table +24], eax
     mov ebx, p2_table_3
-    call map_p2_table
+    mov eax,3 ;additional param for map_p2_table
+    call map_p2_table ;4Gb will be identically mapped
 
     ret
 
@@ -122,11 +131,14 @@ set_up_page_tables:
 map_p2_table:
     ; map each P2 entry to a huge 2MiB page
     mov ecx, 0         ; counter variable
-
+    mov edx, 512
+    mul edx ; eax = eax*dx
+    mov edx, eax ;save table_counter (ax*dx) to dx. So for first p2 table table_counter=0, for second 512, fird - 512*2 ...
 .map_p2:
     ; map ecx-th P2 entry to a huge page that starts at address 2MiB*ecx
     mov eax, 0x200000  ; 2MiB
-    mul ecx            ; start address of ecx-th page
+    add edx, ecx
+    mul edx            ; start address of ecx-th page
     or eax, 0b10000011 ; present + writable + huge
     mov [ebx + ecx * 8], eax ; map ecx-th entry
 
@@ -184,6 +196,8 @@ p2_table_3:
 stack_bottom:
     resb 4096 * 4
 stack_top:
+var_multiboot_info:
+    resb 4;
 
 section .rodata
 gdt64:

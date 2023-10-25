@@ -1,0 +1,1 @@
+/home/igor/projects/C/My_OS/src/arch/x86-64/rust/target/x86_64-blog_os/debug/libblog_os.a: /home/igor/projects/C/My_OS/src/arch/x86-64/rust/src/lib.rs /home/igor/projects/C/My_OS/src/arch/x86-64/rust/src/memory/area_frame_allocator.rs /home/igor/projects/C/My_OS/src/arch/x86-64/rust/src/memory/mod.rs /home/igor/projects/C/My_OS/src/arch/x86-64/rust/src/vga_buffer.rs

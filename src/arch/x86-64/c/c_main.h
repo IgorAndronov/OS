@@ -1,3 +1,6 @@
+#ifndef C_MAIN_H
+#define C_MAIN_H
+
 typedef struct {
     unsigned char black;
     unsigned char blue;
@@ -26,3 +29,9 @@ typedef struct {
 #define VBE_DISPI_8BIT_DAC              0x20
 #define VBE_DISPI_LFB_ENABLED           0x40
 #define VBE_DISPI_NOCLEARMEM            0x80
+
+void print (char* char_ptr, int len);
+void println (char* char_ptr, int len);
+void print_int (int val);
+
+#endif
