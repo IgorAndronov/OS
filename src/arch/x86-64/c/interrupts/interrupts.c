@@ -5,11 +5,9 @@
 #include "../core/port.h"
 #include <inttypes.h>
 
-
+//below dummy declaration is needed as c compiler adds some stack protection to resulting code and as result it cannot be linked due to missing below function.
 void breakpoint_handler(isr_stack_t* stack);
 void page_fault_handler(isr_stack_t* stack);
-
-//below dummy declaration is needed as c compiler adds some stack protection to resulting code and as result it cannot be linked due to missing below function.
 
 
 void arch_isr_init()

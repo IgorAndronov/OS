@@ -21,8 +21,6 @@ void idt_register_gate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
   idt[n].s = 0;
   idt[n].dpl = dpl;
   idt[n].present = 1;
-
- 
 }
 
 void idt_register_interrupt(uint16_t n, uint64_t handler)

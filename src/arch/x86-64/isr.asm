@@ -33,7 +33,7 @@
     push dword 0 ;error_code
     push dword (32 + %1) ;id
     jmp irq_common_stub ;after jmp to irq_common_stub, save_registers are called as result we push in stack struct isr_stack (defined in interrupt.h)
-                        ;to be more presize from r15 to rax + id +error_code from two push instructions before call
+                        ;to be more presize from r15 to rax + id +error_code from two push instructions before jmp
 %endmacro
 
 %macro def_int_handler 1

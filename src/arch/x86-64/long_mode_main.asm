@@ -1,10 +1,10 @@
 global long_mode_start
 extern print
-extern println
-extern print_int
+extern println ;from c_main
+extern print_int ;from c_main
 extern print_graphics 
 ; extern rust_main
-extern isr_init
+extern isr_init ;from isr.c
 extern keyboard_init
 extern network_init
 extern var_multiboot_info
@@ -30,8 +30,8 @@ long_mode_start:
 
     ;call c function print
     ;according to ABI the first 6 integers or pointers are sent in registers only then in stack
-    mov rdi, var_a
-    mov rsi, var_a.leng
+    ;mov rdi, var_a
+    ;mov rsi, var_a.leng
     ; call print 
 
     mov rdi, long_mode_start

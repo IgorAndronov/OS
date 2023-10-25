@@ -31,7 +31,7 @@ ndisasm -b 32 ./src/arch/x86-64/boot.o
 hexdump -x ./src/arch/x86-64/multiboot_header.o
 #inspect object file
 readelf -hSl ./src/arch/x86-64/boot.o
-readelf -s ./src/arch/x86-64/boot.o //symtable info
+readelf -sS ./src/arch/x86-64/boot.o //symtable info
 readelf -r ./src/arch/x86-64/boot.o //relocation entries
 readelf -s ./isofiles/boot/kernel.bin
 readelf -hSl ./isofiles/boot/kernel.bin
@@ -75,3 +75,37 @@ So "stack_top" in resulting code will be replaced with 100000h + offset of the e
 
 As we have identity mapping of first 1GB and bootloader loads program in memory to the same addresses as defined in sections layout 
 all adresses that are calculated as offsets correspond to real phiscal addresses
+
+Notes:
+1. kernel.bin format
+  The kernel.bin file produced by the ld linker command you provided will be in the ELF (Executable and Linkable Format) format. Here's why:
+  GNU Linker (ld) Default: By default, when you use the GNU linker on Linux systems and most other UNIX-like systems, the output format is ELF, which is a common file format for executables, object code, shared libraries, and even core dumps on these platforms.
+  file ./isofiles/boot/kernel.bin
+2. readelf Ndx column:
+    UND: Stands for "undefined". If a symbol's section index is "UND", it means that symbol is not defined in the current ELF file and must be resolved at runtime or link time from another object or shared library.
+    ABS: Means that the symbol is absolute and not associated with any section. For such symbols, the address is an absolute value and won't be adjusted by runtime relocations.
+    COM: Stands for "common". This is used for uninitialized global variables that can be merged with other symbols of the same name in different files.
+    Example ABS defines constant:
+    section .text
+      ...
+      jmp gdt64.code:long_mode_start
+      ...
+    section .rodata
+    gdt64:
+      dq 0 ; zero entry
+    .code: equ $ - gdt64 ;
+      dq (1<<43) | (1<<44) | (1<<47) | (1<<53) ; code segment
+
+   gdt64.code has type ABS. So it means that section .rodata can be placed in any place after link. And as result gdt64 reference can have any address_value but reference
+   gdt64.code is always resolved to 8 (dq defins 8 bytes).
+
+    readelf -sS ./isofiles/boot/kernel.bin
+    29: 00000000001016e0     0 NOTYPE  LOCAL  DEFAULT    3 gdt64
+    30: 0000000000000008     0 NOTYPE  LOCAL  DEFAULT  ABS gdt64.code  
+
+   But it only reference to how symbol gdt64.code is resolved. The content of rodata gdt64 that is "dq (1<<43) | (1<<44) | (1<<47) | (1<<53)"
+   will be relocated with .rodata segment.
+   So the code jmp gdt64.code:long_mode_start is resolved to jmp 0000000000000008:long_mode_start
+   0000000000000008 is offset in gdt that contains second record with value "dq (1<<43) | (1<<44) | (1<<47) | (1<<53)"
+
+   

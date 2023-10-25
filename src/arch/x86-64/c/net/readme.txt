@@ -37,3 +37,4 @@ ld -n -o ./isofiles/boot/kernel.bin -T ./src/arch/x86-64/linker.ld ./src/arch/x8
 3. Run iso in simulator:
 qemu-system-x86_64 -cdrom ./build/os.iso -vga std  -m 1G -net nic,model=rtl8139
 
+
