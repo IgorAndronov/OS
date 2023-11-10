@@ -100,8 +100,8 @@ void idt_register_gate(uint16_t n, uint64_t handler, uint8_t type, uint8_t dpl)
 }
 
 long_mode_main.asm:
-extern isr_init
-extern keyboard_init
+call isr_init
+call keyboard_init
 
 Resume: all methods like irq0,1,2... differ by index they send as parameter when calling isr_irq_handler.
 isr_irq_handler retrives handler by inde from internal array of handlers

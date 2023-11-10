@@ -9,6 +9,9 @@
         "stdint-gcc.h": "c",
         "inttypes.h": "c",
         "gdt.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "cstdint": "c",
+        "string.h": "c",
+        "stddef.h": "c"
     }
 }

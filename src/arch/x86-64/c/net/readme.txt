@@ -37,4 +37,49 @@ ld -n -o ./isofiles/boot/kernel.bin -T ./src/arch/x86-64/linker.ld ./src/arch/x8
 3. Run iso in simulator:
 qemu-system-x86_64 -cdrom ./build/os.iso -vga std  -m 1G -net nic,model=rtl8139
 
+connect to host with NAT:
+qemu-system-x86_64 -cdrom ./build/os.iso -vga std  -m 1G -netdev user,id=mynet0 -device rtl8139,netdev=mynet0
 
+This command does the following:
+    -netdev user,id=mynet0: Creates a new network backend of type user and gives it an ID of mynet0. The user type network backend is a built-in QEMU network stack that requires no administrator privileges and provides a simple network connectivity to your virtual machine.
+    -device rtl8139,netdev=mynet0: Creates a virtual network interface card in the VM with the rtl8139 model, and connects it to the mynet0 backend.
+
+If you want the VM to have access to the internet or to be accessible from the host, you'll usually use the user type network, which is suitable for most needs and creates a kind of NAT-ed connection. For more advanced networking setups, such as bridging or tap devices, additional configuration on the host system is required.
+
+connect to host with bridge network:
+
+sudo qemu-system-x86_64 -cdrom ./build/os.iso -vga std  -m 1G -netdev tap,id=net0,ifname=tap0,script=no,downscript=no -device rtl8139,netdev=net0,mac=52:55:00:d1:55:01 -no-reboot
+
+!!! then on host mashine: 
+  sudo ip link set tap0 up  (to run tap0 interface)
+  ip link show (to check status)
+
+info:
+rtl8139_receive():
+In the case of the RTL8139 and many other network interface cards, the status of the receive buffer is managed through a ring buffer mechanism and not through an "empty" flag in the command register. The ring buffer has a read pointer (which the CPU updates after processing packets) and a write pointer (which the NIC updates as it writes new data). If both pointers are at the same location, the buffer can be considered empty, meaning there is no new data to read.
+
+The command register is typically used to control the operation of the NIC, like enabling or disabling the receiver, transmitter, and other operational states.
+
+When your receive handler processes a packet, it's responsible for updating the Current Address of Packet Read (CAPR) register to indicate to the NIC that the data has been consumed. The NIC will then know it can overwrite the old data with new incoming packets.
+
+Here is a conceptual flow of how this is typically handled:
+
+    NIC receives a packet and writes it to the receive buffer, updates the write pointer.
+    NIC raises an interrupt indicating that a packet has been received.
+    CPU handler for the interrupt reads the packet from the receive buffer.
+    After processing the packet, the CPU handler updates the CAPR to point past the end of the last packet read.
+    NIC checks the CAPR and if it matches the write pointer (or in some implementations, if the next packet header is not yet written by the NIC), it knows that the CPU has read all the data, and the buffer is effectively "empty" from the perspective of the CPU.
+
+In summary, the "buffer empty" condition is implicitly managed through the ring buffer's read and write pointers, not through a specific "empty" flag in the command register. The NIC knows to stop writing to the buffer when it reaches the read pointer, which prevents overwriting unread data.
+
+Here's a breakdown of a standard Ethernet II frame structure:
+    Preamble (7 bytes) and Start of Frame Delimiter (SFD, 1 byte): These are used for synchronization and signaling the start of the frame, respectively.
+    Destination MAC Address (6 bytes): The MAC address of the destination device.
+    Source MAC Address (6 bytes): The MAC address of the source device.
+    EtherType/Length (2 bytes): This field serves two purposes. If its value is greater than or equal to 1536 (0x0600), it indicates the EtherType, which identifies the protocol encapsulated in the payload of the frame (like IPv4, IPv6, ARP, etc.). If its value is less than 1536, it indicates the size of the payload in bytes.
+    Payload (46 to 1500 bytes): The data carried by the frame. Its size can be as small as 46 bytes and as large as 1500 bytes. If the data to be transmitted is less than 46 bytes, padding bytes are added to meet the minimum size requirement. This is where the length value (if used instead of EtherType) indicates the actual size of the payload.
+    Frame Check Sequence (FCS, 4 bytes): A 32-bit CRC used for error-checking the contents of the frame.
+
+Note: Frame Check Sequence is not seen in wireshark.
+      Buffer Handling by NIC: When a network interface card (NIC) writes a packet into the RX buffer, it might include additional information like its own headers, status information, or even padding for alignment purposes. This can make the packet appear larger when read directly from the RX buffer.
+      Frame Check Sequence put at the end of packet in buffer. So packet_in_buffer = realPacket+padding_zeroes+FCS(4bytes)

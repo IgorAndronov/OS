@@ -1,3 +1,6 @@
+#include <stddef.h>
+#include <stdint.h>
+
 #ifndef C_MAIN_H
 #define C_MAIN_H
 
@@ -33,5 +36,15 @@ typedef struct {
 void print (char* char_ptr, int len);
 void println (char* char_ptr, int len);
 void print_int (int val);
+void print_bits(unsigned int num);
+void print_int_hex(int val);
+void print_int_t16(uint16_t intval);
+void print_int_hex_t16(uint16_t intval);
+void print_hex(char *char_ptr, int len);
+void println_hex(char *char_ptr, int len);
+void* memcpy(void* dest, const void* src, size_t n);
+void delay(uint64_t ticks);
+void scrollUp();
+void scrollDown();
 
 #endif

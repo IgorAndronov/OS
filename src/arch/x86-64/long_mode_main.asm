@@ -7,6 +7,7 @@ extern print_graphics
 extern isr_init ;from isr.c
 extern keyboard_init
 extern network_init
+extern send_packet_default
 extern var_multiboot_info
 extern p2_table_0
 extern p2_table_1
@@ -70,6 +71,7 @@ long_mode_start:
     call isr_init
     call keyboard_init
     call network_init ;rtl8139.c
+    call send_packet_default ;rtl8139.c
   
    ;call c function print_graphics
    ; call print_graphics 
