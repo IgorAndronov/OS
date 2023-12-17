@@ -46,5 +46,15 @@ void* memcpy(void* dest, const void* src, size_t n);
 void delay(uint64_t ticks);
 void scrollUp();
 void scrollDown();
+void print_graphics();
+
+//////////////////////////////////////////
+#define COLOR_WHITE  0xFFFFFFFF
+#define CHAR_WIDTH  8
+#define CHAR_HEIGHT 8
+
+void init_framebuffer(uint32_t* framebuffer_addr, uint32_t framebuffer_pitch, int is_uefi_bios);
+void draw_pixel(int x, int y, uint32_t color, uint32_t* framebuffer, uint32_t framebuffer_pitch);
+void draw_character(uint32_t* framebuffer, uint32_t framebuffer_pitch, int start_x, int start_y, uint32_t color,  int char_code);
 
 #endif

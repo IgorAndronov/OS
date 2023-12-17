@@ -306,7 +306,8 @@ bool rtl_net_card_init(pci_device_t device)
 
 
 int network_init(){
-   pci_device_t device = pci_get_device(NETCARD_VENDOR_ID, NETCARD_DEVICE_ID); 
+   println("call network_init",-1);
+   pci_device_t device = pci_get_device(RTL8139_VENDOR_ID, RTL8139_DEVICE_ID); 
    println("bus_number/device_number/function_number:", 41);
    print_int(device.bus_number);
    print("/",1);

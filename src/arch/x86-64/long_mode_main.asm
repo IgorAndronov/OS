@@ -11,6 +11,7 @@ extern send_packet_default
 extern var_multiboot_info
 extern p2_table_0
 extern p2_table_1
+extern init_multibootinfo ;from uefi_framebuffer.c
 
 section .text
 bits 64
@@ -22,6 +23,10 @@ long_mode_start:
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+ ;//init framebuffer   
+      mov rdi, [var_multiboot_info]
+      call init_multibootinfo
 
 ; //////////////testing section//////////////////////////////
 

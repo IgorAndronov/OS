@@ -1,11 +1,13 @@
 #include "isr.h"
+#include "../c_main.h"
 
 
 static isr_handler_t handlers[MAX_HANDLERS] = { 0 };
 
 void isr_init()
 {
-
+  println("call isr_init",-1);
+  
   arch_isr_init();
 
   isr_enable_interrupts();

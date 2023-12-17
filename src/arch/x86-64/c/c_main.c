@@ -1,4 +1,5 @@
 #include "c_main.h"
+#include "font.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,6 +9,11 @@
 #define VGA_ADDRESS 0xB8000
 #define BUFER_SIZE (VGA_WIDTH * VGA_HEIGHT * 2 * 10)  //10 pages
 
+//framebuffer provided by grub during bootstrap
+static uint32_t* framebuffer_ptr_g = NULL;
+static uint32_t framebuffer_pitch_g;
+static int is_uefi_bios_g = 0;
+
 int a = 5;
 
 static char *video_buffer_ptr = (char *)VGA_ADDRESS;
@@ -15,6 +21,12 @@ static char output_buffer[BUFER_SIZE] = {0};
 static char *buffer_ptr = output_buffer;
 static char *start_page_ptr = output_buffer;
 static char *start_page_scroll_ptr = output_buffer;
+
+void init_framebuffer(uint32_t* framebuffer_ptr, uint32_t framebuffer_pitch, int is_uefi_bios){
+    framebuffer_ptr_g=framebuffer_ptr;
+    framebuffer_pitch_g =framebuffer_pitch;
+    is_uefi_bios_g=is_uefi_bios;
+}
 
 void *memcpy(void *dest, const void *src, size_t n)
 {
@@ -89,15 +101,18 @@ int num_digits_t16(uint16_t val)
 
 void clear_screen()
 {
-    unsigned char *video_buffer = video_buffer_ptr;
-    // Iterate over each cell in the video buffer.
-    for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++)
-    {
-        // Set the character to space (ASCII code 32).
-        *video_buffer++ = 32;
-        // Set the attribute byte to light grey on black (0x07).
-        *video_buffer++ = 0x07;
+    if(is_uefi_bios_g==0){
+        unsigned char *video_buffer = video_buffer_ptr;
+        // Iterate over each cell in the video buffer.
+        for (int i = 0; i < VGA_WIDTH * VGA_HEIGHT; i++)
+        {
+            // Set the character to space (ASCII code 32).
+            *video_buffer++ = 32;
+            // Set the attribute byte to light grey on black (0x07).
+            *video_buffer++ = 0x07;
+        }
     }
+    
 }
 
 
@@ -108,6 +123,39 @@ void write_to_vga(const char* data, size_t size) {
     }
 }
 
+void write_to_frame_buffer(const char* data, size_t size){
+    int write_pos = 1;
+
+    int current_y = 10;
+    for (size_t i = 0; i < size && i < VGA_WIDTH * VGA_HEIGHT * 2; ++i) {
+        //size contains amount of bytes. Each char is 2 bytes: code+color
+        if(i%2 == 0){
+        char char_code = data[i];
+        
+        if(i%(VGA_WIDTH*2)==0){
+            current_y += CHAR_HEIGHT+5;
+            write_pos = 1;
+        }
+        if(char_code!=0){
+            draw_character(framebuffer_ptr_g, framebuffer_pitch_g, (CHAR_WIDTH+2)*write_pos, current_y, COLOR_WHITE, (int)char_code);
+        }
+        
+        write_pos++;
+        }
+        
+    }
+    
+}
+
+void write_to_display(const char* data, size_t size){
+    if(is_uefi_bios_g!=0){
+        write_to_frame_buffer(data, size);
+
+    }else{
+        write_to_vga(data, size);
+    }
+
+}
 
 void display()
 {
@@ -131,8 +179,8 @@ void display()
 
     clear_screen();
     start_page_scroll_ptr = start_page_ptr;
-    write_to_vga(start_page_ptr, length);
-   // memcpy(video_buffer_ptr, start_page_ptr, length);
+    write_to_display(start_page_ptr, length);
+
 }
 
 void scrollUp()
@@ -423,3 +471,24 @@ void print_graphics()
         *(buffer_ptr + i) = red;
     }
 }
+
+void draw_pixel(int x, int y, uint32_t color, uint32_t* framebuffer, uint32_t framebuffer_pitch) {
+    uint32_t* pixel = (uint32_t*)((uintptr_t)framebuffer + y * framebuffer_pitch + x * 4);
+    *pixel = color;
+}
+
+void draw_character(uint32_t* framebuffer, uint32_t framebuffer_pitch, int start_x, int start_y, uint32_t color, int char_code) {
+    if(framebuffer==NULL){
+       return;     
+    }
+
+    char (*letter)[CHAR_HEIGHT] = &font8x8_basic[char_code];
+    for (int y = 0; y < CHAR_HEIGHT; y++) {
+        for (int x = 0; x < CHAR_WIDTH; x++) {
+            if ((*letter)[y] & (1<<x)) {
+                draw_pixel(start_x + x, start_y + y, color, framebuffer, framebuffer_pitch);
+            }
+        }
+    }
+}
+

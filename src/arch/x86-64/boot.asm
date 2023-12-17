@@ -13,7 +13,8 @@ start:
 
     call check_multiboot
     call check_cpuid
-    call check_long_mode
+    call check_long_mode_support
+    call check_current_mode ;if long mode is active then jump to code in long mode
 
     call set_up_page_tables
     call enable_paging
@@ -32,6 +33,15 @@ check_multiboot:
 .no_multiboot:
     mov al, "0"
     jmp error
+check_current_mode:
+    ; Read the IA32_EFER MSR to check if long mode is active
+    mov ecx, 0xC0000080     ; IA32_EFER MSR number
+    rdmsr                   ; Read MSR into EDX:EAX
+    test edx, 1             ; Check LMA bit in high 32 bits of IA32_EFER
+    jnz jmp_to_long_mode    ; Jump if long mode is active
+    ret
+jmp_to_long_mode:
+    jmp gdt64.code:long_mode_start
 check_cpuid:
     ; Check if CPUID is supported by attempting to flip the ID bit (bit 21)
     ; in the FLAGS register. If we can flip it, CPUID is available.
@@ -68,7 +78,7 @@ check_cpuid:
     mov al, "1"
     jmp error
 
-check_long_mode:
+check_long_mode_support:
     ; test if extended processor info in available
     mov eax, 0x80000000    ; implicit argument for cpuid
     cpuid                  ; get highest supported argument

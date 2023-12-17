@@ -12,6 +12,14 @@
         "interrupt.h": "c",
         "cstdint": "c",
         "string.h": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "graphicsoutput.h": "c",
+        "uefibootservicestablelib.h": "c",
+        "memoryallocationlib.h": "c",
+        "uefi.h": "c",
+        "uefibasetype.h": "c",
+        "base.h": "c",
+        "uefi_framebuffer.h": "c",
+        "font.h": "c"
     }
 }

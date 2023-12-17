@@ -47,6 +47,7 @@ static void keyboard_callback(isr_stack_t *stack)
 
 void keyboard_init()
 {
+  println("keyboard_init",-1);
   isr_register_handler(IRQ1, keyboard_callback);
 }
 
